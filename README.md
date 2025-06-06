@@ -29,9 +29,27 @@ ArchFlow AI empowers users to design, simulate, and document complex system arch
 
 ---
 
+## 🖥️ Core Screens & User Workflow
+
+ArchFlow AI is organized around several key screens that guide the user journey:
+
+1. **Dashboard**
+   - Central hub to initiate new projects, access existing designs, and view recent activity.
+2. **Canvas UI**
+   - Interactive diagramming interface for building and manipulating architecture diagrams.
+3. **AI Assistant Panel**
+   - Chat interface for interacting with the AI, requesting components, and generating documentation.
+4. **Simulation Engine UI**
+   - Visualizes data/request flow within the architecture and displays performance metrics.
+5. **Documentation Panel**
+   - Preview, edit, and export generated PRD and TRD documents.
+
+---
+
 ## 🧱 System Architecture
 
 ### **Frontend (React-based)**
+- **Dashboard:** Project management and quick access to recent work.
 - **Canvas UI:**
   - Powered by D3.js or React Flow for diagramming.
   - Features snap-to-grid, connectors, groups, and annotations.
@@ -41,7 +59,8 @@ ArchFlow AI empowers users to design, simulate, and document complex system arch
 - **Simulation Engine UI:**
   - Animates request/data flow.
   - Displays system health metrics, delays, and processing times.
-- **Document Preview & Export:**
+- **Documentation Panel:**
+  - Preview, edit, and export PRD/TRD documents.
 
 ### **Backend (Node.js/Express or Python FastAPI)**
 - **Diagram Parser:** Converts visual diagrams into an internal DSL or JSON model.
@@ -71,12 +90,12 @@ ArchFlow AI empowers users to design, simulate, and document complex system arch
 
 ## 📈 Example User Workflow
 
-1. **User opens ArchFlow AI.**
-2. **Chat Assistant:** "Hi! What would you like to build today?"
-3. **User types:** “A web app with load balancer, app server, Redis cache, and MySQL DB.”
-4. **AI generates a base diagram; user tweaks layout on canvas.**
-5. **Simulation mode:** User presses "Run Simulation" and sees how a user request travels through the system.
-6. **Documentation tab:** User clicks "Generate PRD & TRD". AI outputs editable documents based on the system.
+1. **User opens ArchFlow AI and lands on the Dashboard.**
+2. **User starts a new project or selects an existing one.**
+3. **Canvas UI:** User builds the architecture diagram.
+4. **AI Assistant Panel:** User interacts with the AI for suggestions and documentation.
+5. **Simulation Engine UI:** User runs a simulation to visualize system behavior.
+6. **Documentation Panel:** User previews, edits, and exports PRD & TRD documents.
 
 ---
 
