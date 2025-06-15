@@ -142,17 +142,4 @@ The application consists of 3 main tabs and an AI Assistant:
 
 ## License
 
-[To be added] 
-
-
-1. remove "Untitled Diagram" heading
----
-UI of Blank Diagram is divided into three main parts
-1. archflow editor
-2. AI assitant
-3. top bar containing user's project name , save, import and export buttons
----
-1. archflow editor will have 3 tabs(diagram, simulation, documentation)
-2. if user clicks on diagram tab, diagram editor with scrollbars(both h and v)...currently, all buttons are not visible in the view port...view port is getting clipped, in both h and v ways
-3. if user clicks on Documentation tab, three sub tabs should come: PRD, TRD and Taskslist
-all tabs under  Documentation tab, should have text(markdown) editor, with markdown preview feature enabled.
+[To be added]
