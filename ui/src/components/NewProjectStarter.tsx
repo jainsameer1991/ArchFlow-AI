@@ -27,10 +27,7 @@ const NewProjectStarter: React.FC<NewProjectStarterProps> = ({ fullWidth }) => {
   const navigate = useNavigate();
   return (
     <Box
-      sx={fullWidth
-        ? { px: 0, py: 4, width: '100%' }
-        : { maxWidth: 1200, mx: 'auto', px: 3, py: 4, width: '100%' }
-      }
+      sx={{ width: '100vw', px: 0, py: 4, height: '100%', display: 'block' }}
     >
       <Typography variant="h4" fontWeight={700} gutterBottom>Start a new project</Typography>
       <Grid container columns={12} spacing={4}>

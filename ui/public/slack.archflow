@@ -4,6 +4,192 @@ project:
     This project simulates and documents the architecture of a Slack-like real-time messaging system.
     The system supports real-time text communication in channels, with persistence, cross-server delivery, and membership management.
 
+diagram: |
+  {"nodes":[{"id":"node_0","type":"uploadNode","position":{"x":-198.22221775033202,"y":197.1724572405116},"data":{"label":"Client A","description":"User A, member of channel c3","id":"node_0","componentType":"Client","icon":{"type":{"type":{},"compare":null},"key":null,"props":{},"_owner":null,"_store":{}},"hasDataModelBox":false},"width":181,"height":46,"selected":false,"positionAbsolute":{"x":-198.22221775033202,"y":197.1724572405116},"dragging":false},{"id":"node_1","type":"uploadNode","position":{"x":-197.53679834272995,"y":129.8046403773907},"data":{"label":"Client C","description":"User C, member of channel c3","id":"node_1","componentType":"Client","icon":{"type":{"type":{},"compare":null},"key":null,"props":{},"_owner":null,"_store":{}},"hasDataModelBox":false},"width":181,"height":46,"selected":false,"positionAbsolute":{"x":-197.53679834272995,"y":129.8046403773907},"dragging":false},{"id":"node_2","type":"uploadNode","position":{"x":-192.55706875284935,"y":-9.71574439650226},"data":{"label":"Client E","description":"User E, member of channel c3","id":"node_2","componentType":"Client","icon":{"type":{"type":{},"compare":null},"key":null,"props":{},"_owner":null,"_store":{}},"hasDataModelBox":false},"width":179,"height":46,"selected":false,"positionAbsolute":{"x":-192.55706875284935,"y":-9.71574439650226},"dragging":false},{"id":"node_3","type":"uploadNode","position":{"x":-39.315603988278326,"y":-147.70714848889128},"data":{"label":"Connection Balancer","description":"Directs clients to the correct WebSocket server (used during connection setup)","id":"node_3","componentType":"Service","icon":null,"hasDataModelBox":false},"width":243,"height":46,"selected":false,"positionAbsolute":{"x":-39.315603988278326,"y":-147.70714848889128},"dragging":false},{"id":"node_4","type":"uploadNode","position":{"x":222.87204087036798,"y":270.79199111254485},"data":{"label":"WebSocket Server 1","description":"Handles real-time connections for A and C","id":"node_4","componentType":"Service","icon":null,"hasDataModelBox":false},"width":237,"height":46,"selected":false,"positionAbsolute":{"x":222.87204087036798,"y":270.79199111254485},"dragging":false},{"id":"node_5","type":"uploadNode","position":{"x":229.26542936453018,"y":130.5388148540562},"data":{"label":"WebSocket Server 2","description":"Handles real-time connections for E","id":"node_5","componentType":"Service","icon":null,"hasDataModelBox":false},"width":240,"height":46,"selected":false,"positionAbsolute":{"x":229.26542936453018,"y":130.5388148540562},"dragging":false},{"id":"node_6","type":"uploadNode","position":{"x":719.3011655232154,"y":-7.287365200770751},"data":{"label":"Redis Pub/Sub","description":"Cross-server message delivery","id":"node_6","componentType":"Service","icon":null,"hasDataModelBox":false},"width":198,"height":46,"selected":false,"positionAbsolute":{"x":719.3011655232154,"y":-7.287365200770751},"dragging":false},{"id":"node_7","type":"uploadNode","position":{"x":733.9787788049107,"y":491.54805858248784},"data":{"label":"MySQL","description":"Persists messages","id":"node_7","componentType":"MySQL","icon":{"type":{"type":{},"compare":null},"key":null,"props":{},"_owner":null,"_store":{}},"hasDataModelBox":true,"dataModel":{"from":"A"}},"width":177,"height":90,"selected":true,"positionAbsolute":{"x":733.9787788049107,"y":491.54805858248784},"dragging":false},{"id":"node_8","type":"uploadNode","position":{"x":241.29853812671416,"y":463.2830519687902},"data":{"label":"API Server","description":"Handles message persistence and acks","id":"node_8","componentType":"REST API","icon":{"type":{"type":{},"compare":null},"key":null,"props":{},"_owner":null,"_store":{}},"hasDataModelBox":false},"width":200,"height":46,"selected":false,"positionAbsolute":{"x":241.29853812671416,"y":463.2830519687902},"dragging":false},{"id":"node_9","type":"uploadNode","position":{"x":1016.5667015659923,"y":276.71365716448815},"data":{"label":"Membership Service","description":"Tracks which users are connected to which WebSocket servers","id":"node_9","componentType":"Service","icon":null,"hasDataModelBox":false},"width":241,"height":46,"selected":false,"positionAbsolute":{"x":1016.5667015659923,"y":276.71365716448815},"dragging":false}],"edges":[{"id":"e_node_0_node_8_e0pz67","source":"node_0","target":"node_8","type":"default","markerEnd":"arrowclosed","style":{"stroke":"#1976d2","strokeWidth":2},"label":"Send message (REST)","requestModel":{"name":"SendMessageRequest","json":{"channelId":"c3","message":"Hi all"}},"responseModel":{"name":"","json":{}},"sequenceNo":1},{"id":"e_node_8_node_7_ceozat","source":"node_8","target":"node_7","type":"default","markerEnd":"arrowclosed","style":{"stroke":"#1976d2","strokeWidth":2},"label":"Persist message","requestModel":{"name":"","json":{}},"responseModel":{"name":"","json":{}},"sequenceNo":2},{"id":"e_node_8_node_6_968573","source":"node_8","target":"node_6","type":"default","markerEnd":"arrowclosed","style":{"stroke":"#1976d2","strokeWidth":2},"label":"Publish message (c3)","requestModel":{"name":"ChannelMessage","json":{"channelId":"c3","message":"Hi all"}},"responseModel":{"name":"","json":{}},"sequenceNo":3},{"id":"e_node_4_node_9_md6wvk","source":"node_4","target":"node_9","type":"default","markerEnd":"arrowclosed","style":{"stroke":"#1976d2","strokeWidth":2},"label":"Membership check (local)","requestModel":{"name":"GetChannelMembersRequest","json":{"channelId":"c3"}},"responseModel":{"name":"GetChannelMembersResponse","json":{"members":["A","C"]}},"sequenceNo":4},{"id":"e_node_4_node_1_tmakfw","source":"node_4","target":"node_1","type":"default","markerEnd":"arrowclosed","style":{"stroke":"#1976d2","strokeWidth":2},"label":"Deliver message (local)","requestModel":{"name":"ChannelMessage","json":{"channelId":"c3","message":"Hi all"}},"responseModel":{"name":"","json":{}},"sequenceNo":5},{"id":"e_node_6_node_5_ycvqbv","source":"node_6","target":"node_5","type":"default","markerEnd":"arrowclosed","style":{"stroke":"#1976d2","strokeWidth":2},"label":"Consume message","requestModel":{"name":"ChannelMessage","json":{"channelId":"c3","message":"Hi all"}},"responseModel":{"name":"","json":{}},"sequenceNo":6,"selected":true},{"id":"e_node_5_node_9_7r6sif","source":"node_5","target":"node_9","type":"default","markerEnd":"arrowclosed","style":{"stroke":"#1976d2","strokeWidth":2},"label":"Membership check (remote)","requestModel":{"name":"GetChannelMembersRequest","json":{"channelId":"c3"}},"responseModel":{"name":"GetChannelMembersResponse","json":{"members":["E"]}},"sequenceNo":7},{"id":"e_node_5_node_2_zdr24f","source":"node_5","target":"node_2","type":"default","markerEnd":"arrowclosed","style":{"stroke":"#1976d2","strokeWidth":2},"label":"Deliver message (remote)","requestModel":{"name":"ChannelMessage","json":{"channelId":"c3","message":"Hi all"}},"responseModel":{"name":"","json":{}},"sequenceNo":8}],"workflowName":"slack realtime text communication"}
+
+simulation:
+  flows:
+    - id: message_send
+      label: "Message Send Flow"
+      description: "Simulates the process of sending a message from a client to other clients in a channel."
+      steps:
+        - id: step1
+          type: request
+          label: "Client A sends message to API Server"
+          from: "Client A"
+          to: "API Server"
+          edgeLabel: "Send message (REST)"
+          message: "SendMessageRequest"
+        - id: step2
+          type: request
+          label: "API Server persists message in MySQL"
+          from: "API Server"
+          to: "MySQL"
+          edgeLabel: "Persist message"
+          message: "PersistMessageRequest"
+        - id: step3
+          type: response
+          label: "MySQL responds to API Server"
+          from: "MySQL"
+          to: "API Server"
+          edgeLabel: "Persist message (response)"
+          message: "PersistMessageResponse"
+        - id: step4
+          type: request
+          label: "API Server publishes message to Redis Pub/Sub"
+          from: "API Server"
+          to: "Redis Pub/Sub"
+          edgeLabel: "Publish message (c3)"
+          message: "ChannelMessage"
+        - id: step5
+          type: request
+          label: "Redis Pub/Sub delivers message to WebSocket Server 1"
+          from: "Redis Pub/Sub"
+          to: "WebSocket Server 1"
+          edgeLabel: "Deliver message to WS1"
+          message: "ChannelMessage"
+        - id: step6
+          type: request
+          label: "WebSocket Server 1 checks membership (local)"
+          from: "WebSocket Server 1"
+          to: "Membership Service"
+          edgeLabel: "Membership check (local)"
+          message: "GetChannelMembersRequest"
+        - id: step7
+          type: response
+          label: "Membership Service responds to WebSocket Server 1"
+          from: "Membership Service"
+          to: "WebSocket Server 1"
+          edgeLabel: "Membership check (local) (response)"
+          message: "GetChannelMembersResponse"
+        - id: step8
+          type: request
+          label: "WebSocket Server 1 delivers message to Client C"
+          from: "WebSocket Server 1"
+          to: "Client C"
+          edgeLabel: "Deliver message (local)"
+          message: "ChannelMessage"
+        - id: step9
+          type: request
+          label: "Redis Pub/Sub delivers message to WebSocket Server 2"
+          from: "Redis Pub/Sub"
+          to: "WebSocket Server 2"
+          edgeLabel: "Deliver message to WS2"
+          message: "ChannelMessage"
+        - id: step10
+          type: request
+          label: "WebSocket Server 2 checks membership (remote)"
+          from: "WebSocket Server 2"
+          to: "Membership Service"
+          edgeLabel: "Membership check (remote)"
+          message: "GetChannelMembersRequest"
+        - id: step11
+          type: response
+          label: "Membership Service responds to WebSocket Server 2"
+          from: "Membership Service"
+          to: "WebSocket Server 2"
+          edgeLabel: "Membership check (remote) (response)"
+          message: "GetChannelMembersResponse"
+        - id: step12
+          type: request
+          label: "WebSocket Server 2 delivers message to Client E"
+          from: "WebSocket Server 2"
+          to: "Client E"
+          edgeLabel: "Deliver message (remote)"
+          message: "ChannelMessage"
+    - id: channel_creation
+      label: "Channel Creation Flow"
+      description: "Simulates the process of creating a new channel and adding the creator as admin."
+      steps:
+        - id: step1
+          type: request
+          label: "Client A sends CreateChannelRequest to API Server"
+          from: "Client A"
+          to: "API Server"
+          edgeLabel: "Create channel"
+          message: "CreateChannelRequest"
+        - id: step2
+          type: request
+          label: "API Server persists channel in MySQL"
+          from: "API Server"
+          to: "MySQL"
+          edgeLabel: "Persist channel"
+          message: "PersistChannelRequest"
+        - id: step3
+          type: response
+          label: "MySQL responds to API Server"
+          from: "MySQL"
+          to: "API Server"
+          edgeLabel: "Persist channel (response)"
+          message: "PersistChannelResponse"
+        - id: step4
+          type: request
+          label: "API Server adds creator as admin in Membership Service"
+          from: "API Server"
+          to: "Membership Service"
+          edgeLabel: "Add creator as admin"
+          message: "AddChannelMemberRequest"
+        - id: step5
+          type: response
+          label: "Membership Service responds to API Server"
+          from: "Membership Service"
+          to: "API Server"
+          edgeLabel: "Add creator as admin (response)"
+          message: "AddChannelMemberResponse"
+        - id: step6
+          type: response
+          label: "API Server responds to Client A"
+          from: "API Server"
+          to: "Client A"
+          edgeLabel: "Create channel (response)"
+          message: "CreateChannelResponse"
+    - id: user_connection
+      label: "User Connection Flow"
+      description: "Simulates the process of a user connecting to the system and being routed to a WebSocket server."
+      steps:
+        - id: step1
+          type: request
+          label: "Client A sends ConnectRequest to Connection Balancer"
+          from: "Client A"
+          to: "Connection Balancer"
+          edgeLabel: "Connect"
+          message: "ConnectRequest"
+        - id: step2
+          type: request
+          label: "Connection Balancer routes connection to WebSocket Server 1"
+          from: "Connection Balancer"
+          to: "WebSocket Server 1"
+          edgeLabel: "Route connection"
+          message: "RouteConnectionRequest"
+        - id: step3
+          type: response
+          label: "WebSocket Server 1 responds to Connection Balancer"
+          from: "WebSocket Server 1"
+          to: "Connection Balancer"
+          edgeLabel: "Route connection (response)"
+          message: "RouteConnectionResponse"
+        - id: step4
+          type: response
+          label: "Connection Balancer responds to Client A"
+          from: "Connection Balancer"
+          to: "Client A"
+          edgeLabel: "Connect (response)"
+          message: "ConnectResponse"
+        - id: step5
+          type: request
+          label: "WebSocket Server 1 updates presence in Membership Service"
+          from: "WebSocket Server 1"
+          to: "Membership Service"
+          edgeLabel: "Update presence"
+          message: "UpdatePresenceRequest"
+        - id: step6
+          type: response
+          label: "Membership Service responds to WebSocket Server 1"
+          from: "Membership Service"
+          to: "WebSocket Server 1"
+          edgeLabel: "Update presence (response)"
+          message: "UpdatePresenceResponse"
+
 architecture:
   actions:
     # Message Sending Flow

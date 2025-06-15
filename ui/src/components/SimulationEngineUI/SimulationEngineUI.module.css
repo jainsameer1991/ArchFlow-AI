@@ -1,0 +1,52 @@
+.sim-node {
+  transition: stroke 0.2s, filter 0.2s;
+  stroke: #1976d2;
+  filter: drop-shadow(0 2px 4px #0001);
+}
+.sim-node.active {
+  stroke: #ff9800;
+  filter: drop-shadow(0 4px 12px #ff980033);
+}
+.sim-edge {
+  transition: stroke 0.2s;
+  stroke: #1976d2;
+}
+.sim-edge.active-arrow {
+  stroke: #ff9800;
+}
+
+.sim-diagram-container {
+  background: #fafbfc;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  margin: 16px 0;
+  padding: 8px;
+  overflow: auto;
+}
+
+.sim-step-label {
+  font-size: 1.1rem;
+  color: #1976d2;
+  margin: 12px 0;
+}
+
+.sim-flow-list {
+  list-style: none;
+  padding: 0;
+}
+.sim-flow-list li {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+}
+.sim-flow-list button {
+  margin-left: 12px;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.sim-flow-list button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+} 

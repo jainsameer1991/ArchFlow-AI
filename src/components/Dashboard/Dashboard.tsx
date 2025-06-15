@@ -1,24 +1,3 @@
-import React from 'react';
-import { Box, Typography, Card, CardContent, Button, Stack } from '@mui/material';
-import Grid from '@mui/material/Grid';
-import dashboardHeaderIcon from '../../assets/figma_components/0:116.svg';
-
-const Dashboard: React.FC = () => {
-  const rootRef = React.useRef<HTMLDivElement>(null);
-  React.useEffect(() => {
-    if (rootRef.current) {
-      const rect = rootRef.current.getBoundingClientRect();
-      console.log('[Dashboard.tsx] Root Box rect:', rect);
-    }
-    const handleResize = () => {
-      if (rootRef.current) {
-        const rect = rootRef.current.getBoundingClientRect();
-        console.log('[Dashboard.tsx] Root Box rect on resize:', rect);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   return (
     <Box
       ref={rootRef}
@@ -110,6 +89,4 @@ const Dashboard: React.FC = () => {
       </Box>
     </Box>
   );
-};
-
-export default Dashboard;
+} 

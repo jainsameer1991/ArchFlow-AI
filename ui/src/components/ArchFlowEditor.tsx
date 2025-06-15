@@ -1,12 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Box, Typography, Tabs, Tab, Button, Divider, Stack, Paper, IconButton } from '@mui/material';
-import SaveIcon from '@mui/icons-material/Save';
-import UploadIcon from '@mui/icons-material/Upload';
-import DownloadIcon from '@mui/icons-material/Download';
 import DiagramEditor from './DiagramEditor';
 import MDEditor from '@uiw/react-md-editor';
 import Mermaid from './Mermaid';
 import mermaid from 'mermaid';
+import SimulationEngineUI from './SimulationEngineUI/SimulationEngineUI';
 
 // Add a type for the project state
 interface ArchflowProject {
@@ -20,8 +18,26 @@ interface ArchflowProject {
   };
 }
 
-interface BlankDiagramProps {
+interface ArchFlowEditorProps {
   fullWidth?: boolean;
+  projectName: string;
+  setProjectName: (name: string) => void;
+  prd: string;
+  setPrd: (prd: string) => void;
+  trd: string;
+  setTrd: (trd: string) => void;
+  tasks: string;
+  setTasks: (tasks: string) => void;
+  simulation: any;
+  setSimulation: (sim: any) => void;
+  editorKey: number;
+  setEditorKey: (k: (prev: number) => number) => void;
+  diagramRef: React.RefObject<any>;
+  currentDiagram?: any;
+  tab: number;
+  setTab: (tab: number) => void;
+  docTab: number;
+  setDocTab: (tab: number) => void;
 }
 
 const extractCode = (children: React.ReactNode): string => {
@@ -43,20 +59,33 @@ const MermaidCodeBlock = ({ children, className }: { children?: React.ReactNode;
 const normalizeMarkdown = (md: string) =>
   md.replace(/([^\n])\n(```)/g, '$1\n\n$2');
 
-const BlankDiagram: React.FC<BlankDiagramProps> = ({ fullWidth }) => {
-  const [tab, setTab] = useState(0);
-  const [docTab, setDocTab] = useState(0);
-  const [prd, setPrd] = useState<string>('');
-  const [trd, setTrd] = useState<string>('');
-  const [tasks, setTasks] = useState<string>('');
-  const [projectName, setProjectName] = useState('Untitled Project');
-  const diagramRef = useRef<any>(null);
+const ArchFlowEditor = forwardRef<any, ArchFlowEditorProps>(({
+  fullWidth,
+  projectName,
+  setProjectName,
+  prd,
+  setPrd,
+  trd,
+  setTrd,
+  tasks,
+  setTasks,
+  simulation,
+  setSimulation,
+  editorKey,
+  setEditorKey,
+  diagramRef,
+  currentDiagram,
+  tab,
+  setTab,
+  docTab,
+  setDocTab
+}, ref) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [editorKey, setEditorKey] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Dummy simulation state for now
-  const [simulation, setSimulation] = useState<any>(null);
+  useImperativeHandle(ref, () => ({
+    setDiagramState: (state: any) => diagramRef.current?.setDiagramState?.(state),
+  }));
 
   useEffect(() => {
     if (tab === 2 && previewRef.current) {
@@ -69,6 +98,13 @@ const BlankDiagram: React.FC<BlankDiagramProps> = ({ fullWidth }) => {
       return () => observer.disconnect();
     }
   }, [tab, prd, trd, tasks, docTab]);
+
+  // Restore diagram on remount or when currentDiagram changes
+  useEffect(() => {
+    if (currentDiagram && diagramRef.current && diagramRef.current.setDiagramState) {
+      diagramRef.current.setDiagramState(currentDiagram);
+    }
+  }, [currentDiagram, editorKey]);
 
   // Export project as .archflow file
   const handleExportProject = () => {
@@ -122,42 +158,62 @@ const BlankDiagram: React.FC<BlankDiagramProps> = ({ fullWidth }) => {
       const response = await fetch('/slack.archflow');
       if (!response.ok) throw new Error('File not found');
       const text = await response.text();
-      let project: ArchflowProject;
+      let project: any;
       try {
-        project = JSON.parse(text);
-      } catch (jsonErr) {
-        // Try to parse as YAML if JSON fails (for .archflow YAML files)
-        // For now, just fallback to old logic
-        throw jsonErr;
+        // Try YAML first (since .archflow is YAML)
+        const jsYaml = await import('js-yaml');
+        project = jsYaml.load(text);
+        console.log('Loaded project object:', project);
+        console.log('Type of project.diagram:', typeof project.diagram);
+        console.log('Value of project.diagram:', project.diagram);
+      } catch (yamlErr) {
+        console.error('YAML parsing error:', yamlErr);
+        alert('YAML parsing error: ' + (yamlErr as Error).message);
+        try {
+          // Fallback to JSON
+          project = JSON.parse(text);
+          console.log('Loaded project object (JSON fallback):', project);
+          console.log('Type of project.diagram:', typeof project.diagram);
+          console.log('Value of project.diagram:', project.diagram);
+        } catch (jsonErr) {
+          console.error('JSON parsing error:', jsonErr);
+          alert('JSON parsing error: ' + (jsonErr as Error).message);
+          return;
+        }
       }
-      setProjectName(project.projectName || 'Untitled Project');
-      // Support both documentation.prd/trd/tasks and documentation.prd/trd/task_list
+      setProjectName(project.project?.name || project.projectName || 'Untitled Project');
       const doc = project.documentation || project.documentation || {};
       setPrd(normalizeMarkdown(doc.prd || ''));
       setTrd(normalizeMarkdown(doc.trd || ''));
-      setTasks(normalizeMarkdown(doc.tasks || (doc as any).task_list?.toString() || ''));
+      setTasks(normalizeMarkdown(doc.tasks || doc.task_list?.toString() || ''));
       setEditorKey(k => k + 1);
       setSimulation(project.simulation || null);
-      diagramRef.current?.setDiagramState?.(project.diagram || {});
-    } catch (err) {
-      // Try to parse as YAML if not valid JSON
-      try {
-        // Only import js-yaml if needed
-        const jsYaml = await import('js-yaml');
-        const response = await fetch('/slack.archflow');
-        const text = await response.text();
-        const project = jsYaml.load(text) as any;
-        setProjectName(project.project?.name || 'Untitled Project');
-        const doc = project.documentation || {};
-        setPrd(normalizeMarkdown(doc.prd || ''));
-        setTrd(normalizeMarkdown(doc.trd || ''));
-        setTasks(normalizeMarkdown(doc.tasks || (doc as any).task_list?.toString() || ''));
-        setEditorKey(k => k + 1);
-        setSimulation(project.simulation || null);
-        diagramRef.current?.setDiagramState?.(project.diagram || {});
-      } catch (yamlErr) {
-        alert('Could not load slack.archflow: ' + (err as Error).message);
+      // Diagram loading logic
+      if (typeof project.diagram === 'string') {
+        try {
+          console.log('Loaded diagram string:', project.diagram);
+          const diagramJson = JSON.parse(project.diagram.trim());
+          diagramRef.current?.setDiagramState?.(diagramJson);
+        } catch (e) {
+          alert('Diagram JSON parse error: ' + (e as Error).message);
+          // fallback: if it's a file reference (should not happen now)
+          if (project.diagram.includes('.json')) {
+            const diagramResp = await fetch('/' + project.diagram.replace(/^!!import\s+/, '').replace(/['"]/g, '').trim());
+            if (diagramResp.ok) {
+              const diagramJson = await diagramResp.json();
+              diagramRef.current?.setDiagramState?.(diagramJson);
+            }
+          } else {
+            diagramRef.current?.setDiagramState?.({});
+          }
+        }
+      } else if (project.diagram) {
+        diagramRef.current?.setDiagramState?.(project.diagram);
+      } else if (project.architecture) {
+        diagramRef.current?.setDiagramState?.(project.architecture);
       }
+    } catch (err) {
+      alert('Could not load slack.archflow: ' + (err as Error).message);
     }
   };
 
@@ -168,27 +224,10 @@ const BlankDiagram: React.FC<BlankDiagramProps> = ({ fullWidth }) => {
 
   return (
     <Box
-      sx={fullWidth
-        ? { px: 0, py: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }
-        : { maxWidth: 1200, mx: 'auto', px: 3, py: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }
-      }
+      sx={{ width: '100%', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}
     >
-      {/* Project-level top bar */}
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2, px: 2 }}>
-        <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>{projectName}</Typography>
-        <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSaveProject}>Save Project</Button>
-        <input
-          type="file"
-          accept=".archflow,application/json"
-          style={{ display: 'none' }}
-          ref={fileInputRef}
-          onChange={handleImportProject}
-        />
-        <Button variant="outlined" startIcon={<UploadIcon />} onClick={() => fileInputRef.current?.click()}>Import Project</Button>
-        <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleExportProject}>Export Project</Button>
-        <Button variant="outlined" color="secondary" onClick={handleLoadSlackArchflow}>Load Example (slack.archflow)</Button>
-      </Stack>
-      <Paper elevation={2} sx={{ flex: 1, p: 0, display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 3, overflow: 'hidden', bgcolor: '#fff' }}>
+      {/* Project-level top bar removed; projectName is now managed by parent */}
+      <Paper elevation={2} sx={{ flex: 1, minHeight: 0, height: '100%', p: 0, display: 'flex', flexDirection: 'column', borderRadius: 3, overflow: 'hidden', bgcolor: '#fff', boxSizing: 'border-box' }}>
         <Box sx={{ pt: 2, flexShrink: 0 }}>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
             <Tab label="DIAGRAM" sx={{ fontWeight: 600 }} />
@@ -197,15 +236,19 @@ const BlankDiagram: React.FC<BlankDiagramProps> = ({ fullWidth }) => {
           </Tabs>
           <Divider sx={{ mb: 3 }} />
         </Box>
-        <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           {tab === 0 && (
             <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', height: '100%', width: '100%', overflow: 'auto' }}>
-              <DiagramEditor ref={diagramRef} />
+              <DiagramEditor ref={diagramRef} diagram={currentDiagram} />
             </Box>
           )}
           {tab === 1 && (
-            <Box sx={{ flex: 1, minHeight: 0, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <Typography variant="h6" color="text.secondary">Simulation UI Coming Soon</Typography>
+            <Box sx={{ flex: 1, minHeight: 0, borderRadius: 2, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
+              {currentDiagram && simulation ? (
+                <SimulationEngineUI projectData={{ diagram: JSON.stringify(currentDiagram), simulation }} />
+              ) : (
+                <Typography variant="h6" color="text.secondary" sx={{ m: 2 }}>No simulation data loaded.</Typography>
+              )}
             </Box>
           )}
           {tab === 2 && (
@@ -266,6 +309,8 @@ const BlankDiagram: React.FC<BlankDiagramProps> = ({ fullWidth }) => {
       </Paper>
     </Box>
   );
-};
+});
 
-export default BlankDiagram; 
+ArchFlowEditor.displayName = 'ArchFlowEditor';
+
+export default ArchFlowEditor; 

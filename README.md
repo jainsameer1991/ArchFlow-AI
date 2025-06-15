@@ -1,110 +1,158 @@
-# ArchFlow AI
+# ArchFlow-AI
 
-ArchFlow AI empowers users to design, simulate, and document complex system architectures with the help of AI. Whether you prefer a manual drag-and-drop interface or a conversational AI assistant, ArchFlow AI streamlines the process from ideation to technical documentation.
+A comprehensive project that combines diagram creation, simulation, and documentation generation for system architectures.
 
----
+## Core Structure
 
-## 🚀 Key Features
+The application consists of 3 main tabs and an AI Assistant:
 
-### 1. **AI-Powered Architecture Builder**
-- **Natural Language Interface:** Describe your architecture in plain English.
-- **Drag-and-Drop UI:** Visually build and edit diagrams with an intuitive interface.
-- **Auto-Suggest Components:** Get intelligent suggestions for components (load balancer, DB, microservices, etc.) based on your input.
+1. **Diagram Tab**
+2. **Simulation Tab**
+3. **Documentation Tab**
+4. **AI Assistant** (always available)
 
-### 2. **Real-Time System Simulation**
-- **Visualize Data Flow:** See how data and requests move through your system.
-- **Component Interactions:** Highlight interactions, simulate latency, and identify bottlenecks.
-- **Event-Driven Animations:** Watch system behavior unfold with real-time metrics and animations.
+## Features
 
-### 3. **AI Documentation Generator**
-- **Automatic PRD & TRD:** Instantly generate Product Requirements Documents (PRD) and Technical Requirements Documents (TRD) from your architecture and chat history.
-  - **PRD:** User-level requirements, goals, UX, and assumptions.
-  - **TRD:** System architecture, data flow, APIs, and tech stack.
-- **Customizable Templates:** Export documentation as PDF, Markdown, or Google Docs.
+### 1. Diagram Tab
+- Embeds the existing "data-model-visual-app" design
+- Three ways to create diagrams:
+  - Manual creation
+  - AI Assistant
+  - JSON import
+- Support for uploading/downloading workflows from data-model-visual-app
+- Primary interface for creating system architectures
+- Components can include:
+  - Sequence numbers
+  - Request/Response models
+  - Data flow information
+  - Component descriptions
 
-### 4. **Version Control & Collaboration**
-- **Save & Share Designs:** Store and share your architecture diagrams.
-- **Git-Style History:** Track changes and compare different versions.
-- **Real-Time Collaboration:** (Optional) Edit diagrams with your team in real time.
+### 2. Documentation Tab
+- Contains three sub-tabs:
+  - **PRD** (Product Requirements Document)
+    - Project introduction and abstract
+    - Project summary and goals
+    - User stories and requirements
+    - Business objectives
+    - Success metrics
+    - Stakeholder information
+  - **TRD** (Technical Requirements Document)
+    - System architecture details
+    - Component specifications
+    - Request/Response models
+    - Data flow descriptions
+    - Sequence information
+    - Technical constraints
+  - **Task List**
+- Documentation is auto-generated based on:
+  - Existing diagrams
+  - User input
+- Initial documentation helps in:
+  - Understanding system requirements
+  - Defining technical specifications
+  - Planning implementation approach
 
----
+### 3. Simulation Tab
+- Two modes of operation:
+  - **Empty State**: Only AI Assistant can help create simulation
+  - **With Diagram**: Can generate simulation based on available information
+- Support for multiple simulations within a single diagram
+- Visualizes data flow and interactions between components
+- **Purpose**: Acts as a Proof of Concept (POC) visualization
+  - Demonstrates system behavior
+  - Validates architecture design
+  - Helps identify potential issues before actual implementation
+- **Intelligent Gap Filling**:
+  - Combines information from both Diagram and TRD
+  - Examples:
+    1. If diagram lacks sequence numbers but TRD has flow description:
+       - AI adds sequence numbers to diagram
+       - Updates TRD with component details
+    2. If diagram has sequence but lacks request/response models:
+       - AI adds request/response models from TRD to diagram
+       - Completes missing information in both places
 
-## 🖥️ Core Screens & User Workflow
+### 4. Project Editor UX Features
+- Project Management:
+  - Load/Save functionality for ".archflow" projects
+- Documentation Tab:
+  - Three sub-tabs (PRD, TRD, Task List)
+- Generation Sequence:
+  1. Diagram (manual/AI/JSON)
+  2. Documentation (PRD & TRD)
+  3. Simulation (POC visualization)
+  4. Task List (actual implementation)
+- **Intelligent Synchronization**:
+  - Keeps Diagram and TRD in sync
+  - Fills gaps in either component
+  - Maintains consistency across all artifacts
 
-ArchFlow AI is organized around several key screens that guide the user journey:
+## Example Workflow (Slack Real-Time Messaging)
 
-1. **Dashboard**
-   - Central hub to initiate new projects, access existing designs, and view recent activity.
-2. **Canvas UI**
-   - Interactive diagramming interface for building and manipulating architecture diagrams.
-3. **AI Assistant Panel**
-   - Chat interface for interacting with the AI, requesting components, and generating documentation.
-4. **Simulation Engine UI**
-   - Visualizes data/request flow within the architecture and displays performance metrics.
-5. **Documentation Panel**
-   - Preview, edit, and export generated PRD and TRD documents.
+1. **Initial Design Phase**
+   - User creates diagram (manually/AI/JSON)
+   - System generates initial PRD and TRD
 
----
+2. **Documentation Phase**
+   - PRD defines:
+     - Project introduction
+     - Business objectives
+     - User requirements
+     - Success metrics
+   - TRD details:
+     - Technical architecture
+     - Component specifications
+     - Data flow patterns
+     - Request/Response models
 
-## 🧱 System Architecture
+3. **POC Phase**
+   - Simulation combines information from:
+     - Diagram sequence numbers
+     - TRD flow descriptions
+     - Request/Response models
+   - Validates architecture design
+   - Identifies potential issues
 
-### **Frontend (React-based)**
-- **Dashboard:** Project management and quick access to recent work.
-- **Canvas UI:**
-  - Powered by D3.js or React Flow for diagramming.
-  - Features snap-to-grid, connectors, groups, and annotations.
-- **AI Assistant Panel:**
-  - Chat interface powered by GPT (OpenAI API).
-  - Suggests components, answers design questions, and generates docs.
-- **Simulation Engine UI:**
-  - Animates request/data flow.
-  - Displays system health metrics, delays, and processing times.
-- **Documentation Panel:**
-  - Preview, edit, and export PRD/TRD documents.
+4. **Implementation Phase**
+   - Task List is generated for actual project implementation
+   - Includes:
+     - Multiple backend services
+     - API definitions
+     - Routing layers
+     - Full project implementation
+   - Task List can be fed into AI code generators (like Cursor AI)
 
-### **Backend (Node.js/Express or Python FastAPI)**
-- **Diagram Parser:** Converts visual diagrams into an internal DSL or JSON model.
-- **Simulation Engine:**
-  - Simulates events based on architecture DSL (inspired by object-storage backend).
-  - Pushes real-time updates to the frontend (WebSockets).
-- **AI Integration Layer:**
-  - Processes diagrams and chat to generate PRD/TRD.
-  - Uses OpenAI or a custom LLM pipeline.
-- **Storage Layer:**
-  - Stores user sessions, diagrams, simulation data, and version history (MongoDB/PostgreSQL).
+## Key Integration Points
 
----
+- All components are interconnected
+- AI Assistant helps at every step
+- Documentation is automatically generated and updated
+- Simulation serves as POC visualization
+- Task List is the final output for actual implementation
+- Intelligent gap-filling between Diagram and TRD
+- PRD focuses on business and user requirements
 
-## 🔗 Integration from Existing Repos
+## Getting Started
 
-### **From `object-storage`**
-- Use simulation logic to model read/write flows (S3-style services, microservices, DBs).
-- Adapt storage-based events to simulate request handling in various architectures.
+[To be added]
 
-### **From `data-model-visual-app`**
-- Reuse or extend the drag-and-drop diagramming interface.
-- Add more node types: API Gateway, Auth Service, Worker, Queue, etc.
-- Enable dynamic connector behavior (e.g., request-response, publish-subscribe).
+## Contributing
 
----
-
-## 📈 Example User Workflow
-
-1. **User opens ArchFlow AI and lands on the Dashboard.**
-2. **User starts a new project or selects an existing one.**
-3. **Canvas UI:** User builds the architecture diagram.
-4. **AI Assistant Panel:** User interacts with the AI for suggestions and documentation.
-5. **Simulation Engine UI:** User runs a simulation to visualize system behavior.
-6. **Documentation Panel:** User previews, edits, and exports PRD & TRD documents.
-
----
-
-## 📝 Next Steps
-
-The generated documentation can be used as input for tools like Cursor, which can then generate code and other artifacts automatically.
-
----
+[To be added]
 
 ## License
 
-[MIT](LICENSE) 
+[To be added] 
+
+
+1. remove "Untitled Diagram" heading
+---
+UI of Blank Diagram is divided into three main parts
+1. archflow editor
+2. AI assitant
+3. top bar containing user's project name , save, import and export buttons
+---
+1. archflow editor will have 3 tabs(diagram, simulation, documentation)
+2. if user clicks on diagram tab, diagram editor with scrollbars(both h and v)...currently, all buttons are not visible in the view port...view port is getting clipped, in both h and v ways
+3. if user clicks on Documentation tab, three sub tabs should come: PRD, TRD and Taskslist
+all tabs under  Documentation tab, should have text(markdown) editor, with markdown preview feature enabled.

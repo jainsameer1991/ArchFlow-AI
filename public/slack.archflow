@@ -1,0 +1,100 @@
+simulation:
+  flows:
+    - id: message_send
+      label: "Message Send Flow"
+      description: "Simulates the process of sending a message from a client to other clients in a channel."
+      steps:
+        # (keep as is, since this flow works)
+        # ... your existing steps ...
+    - id: channel_creation
+      label: "Channel Creation Flow"
+      description: "Simulates the process of creating a new channel and adding the creator as admin."
+      steps:
+        - id: step1
+          type: request
+          label: "Client A sends CreateChannelRequest to API Server"
+          from: "Client A"
+          to: "API Server"
+          edgeLabel: "CreateChannelRequest"
+          message: "CreateChannelRequest"
+        - id: step2
+          type: request
+          label: "API Server persists channel in Database"
+          from: "API Server"
+          to: "Database"
+          edgeLabel: "PersistChannelRequest"
+          message: "PersistChannelRequest"
+        - id: step3
+          type: response
+          label: "Database responds to API Server"
+          from: "Database"
+          to: "API Server"
+          edgeLabel: "PersistChannelResponse"
+          message: "PersistChannelResponse"
+        - id: step4
+          type: request
+          label: "API Server adds creator as admin in Membership Service"
+          from: "API Server"
+          to: "Membership Service"
+          edgeLabel: "AddChannelMemberRequest"
+          message: "AddChannelMemberRequest"
+        - id: step5
+          type: response
+          label: "Membership Service responds to API Server"
+          from: "Membership Service"
+          to: "API Server"
+          edgeLabel: "AddChannelMemberResponse"
+          message: "AddChannelMemberResponse"
+        - id: step6
+          type: response
+          label: "API Server responds to Client A"
+          from: "API Server"
+          to: "Client A"
+          edgeLabel: "CreateChannelResponse"
+          message: "CreateChannelResponse"
+    - id: user_connection
+      label: "User Connection Flow"
+      description: "Simulates the process of a user connecting to the system and being routed to a WebSocket server."
+      steps:
+        - id: step1
+          type: request
+          label: "Client A sends ConnectRequest to Connection Balancer"
+          from: "Client A"
+          to: "Connection Balancer"
+          edgeLabel: "ConnectRequest"
+          message: "ConnectRequest"
+        - id: step2
+          type: request
+          label: "Connection Balancer routes connection to WebSocket Server 1"
+          from: "Connection Balancer"
+          to: "WebSocket Server 1"
+          edgeLabel: "RouteConnectionRequest"
+          message: "RouteConnectionRequest"
+        - id: step3
+          type: response
+          label: "WebSocket Server 1 responds to Connection Balancer"
+          from: "WebSocket Server 1"
+          to: "Connection Balancer"
+          edgeLabel: "RouteConnectionResponse"
+          message: "RouteConnectionResponse"
+        - id: step4
+          type: response
+          label: "Connection Balancer responds to Client A"
+          from: "Connection Balancer"
+          to: "Client A"
+          edgeLabel: "ConnectResponse"
+          message: "ConnectResponse"
+        - id: step5
+          type: request
+          label: "WebSocket Server 1 updates presence in Membership Service"
+          from: "WebSocket Server 1"
+          to: "Membership Service"
+          edgeLabel: "UpdatePresenceRequest"
+          message: "UpdatePresenceRequest"
+        - id: step6
+          type: response
+          label: "Membership Service responds to WebSocket Server 1"
+          from: "Membership Service"
+          to: "WebSocket Server 1"
+          edgeLabel: "UpdatePresenceResponse"
+          message: "UpdatePresenceResponse" 

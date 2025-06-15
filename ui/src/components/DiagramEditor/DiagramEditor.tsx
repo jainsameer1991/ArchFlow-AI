@@ -20,7 +20,11 @@ const initialEdges: Edge[] = [];
 const nodeTypes = {};
 const edgeTypes = {};
 
-const DiagramEditor = forwardRef<any, {}>((props, ref) => {
+interface DiagramEditorProps {
+  diagram?: any;
+}
+
+const DiagramEditor = forwardRef<any, DiagramEditorProps>((props, ref) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>(initialEdges);
   const [workflowName, setWorkflowName] = useState('Untitled Workflow');
@@ -74,6 +78,35 @@ const DiagramEditor = forwardRef<any, {}>((props, ref) => {
     setSaveDialogOpen(false);
     setSnackbar({ open: true, message: 'Workflow saved as ' + saveAsName });
   };
+
+  // Rehydrate from diagram prop
+  React.useEffect(() => {
+    console.log('[DiagramEditor] MOUNT or diagram prop changed', { diagram: props.diagram });
+    if (typeof props.diagram === 'object' && props.diagram) {
+      console.log('[DiagramEditor] Hydrating from diagram prop:', props.diagram);
+      if (Array.isArray(props.diagram.nodes) && Array.isArray(props.diagram.edges)) {
+        setNodes(props.diagram.nodes);
+        setEdges(props.diagram.edges);
+        console.log('[DiagramEditor] setNodes/Edges', props.diagram.nodes, props.diagram.edges);
+      } else {
+        setNodes([]);
+        setEdges([]);
+        console.log('[DiagramEditor] setNodes/Edges to empty array');
+      }
+      if (props.diagram.workflowName) {
+        setWorkflowName(props.diagram.workflowName);
+        console.log('[DiagramEditor] setWorkflowName', props.diagram.workflowName);
+      } else {
+        setWorkflowName('Untitled Workflow');
+        console.log('[DiagramEditor] setWorkflowName to Untitled Workflow');
+      }
+    } else {
+      setNodes([]);
+      setEdges([]);
+      setWorkflowName('Untitled Workflow');
+      console.log('[DiagramEditor] diagram prop is not object, reset to empty');
+    }
+  }, [props.diagram]);
 
   return (
     <Box sx={{ display: 'flex', height: '100%', width: '100%', background: '#f0f2f5', minWidth: 0, minHeight: 0 }}>
