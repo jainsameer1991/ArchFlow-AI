@@ -1,0 +1,660 @@
+project:
+  name: Slack Real-Time Messaging Clone
+  description: |
+    This project simulates and documents the architecture of a Slack-like real-time messaging system.
+    The system supports real-time text communication in channels, with persistence, cross-server delivery, and membership management.
+
+architecture:
+  actions:
+    # Message Sending Flow
+    - type: add_node
+      label: Client A
+      componentType: Client
+      description: User A, member of channel c3
+    - type: add_node
+      label: Client C
+      componentType: Client
+      description: User C, member of channel c3
+    - type: add_node
+      label: Client E
+      componentType: Client
+      description: User E, member of channel c3
+    - type: add_node
+      label: Connection Balancer
+      componentType: Service
+      description: Directs clients to the correct WebSocket server (used during connection setup)
+    - type: add_node
+      label: WebSocket Server 1
+      componentType: Service
+      description: Handles real-time connections for A and C
+    - type: add_node
+      label: WebSocket Server 2
+      componentType: Service
+      description: Handles real-time connections for E
+    - type: add_node
+      label: Redis Pub/Sub
+      componentType: Service
+      description: Cross-server message delivery
+    - type: add_node
+      label: Database
+      componentType: Database
+      description: Persists messages
+    - type: add_node
+      label: API Server
+      componentType: REST API
+      description: Handles message persistence and acks
+    - type: add_node
+      label: Membership Service
+      componentType: Service
+      description: Tracks which users are connected to which WebSocket servers
+
+    # Message Sending Flow
+    - type: add_edge
+      source: Client A
+      target: API Server
+      label: Send message (REST)
+      sequenceNo: 1
+      requestModel:
+        name: SendMessageRequest
+        json:
+          channelId: c3
+          message: Hi all
+          timestamp: "2024-03-20T10:00:00Z"
+          userId: "user_a"
+      responseModel:
+        name: SendMessageResponse
+        json:
+          messageId: "msg_123"
+          status: "success"
+          timestamp: "2024-03-20T10:00:00Z"
+    - type: add_edge
+      source: API Server
+      target: Database
+      label: Persist message
+      sequenceNo: 2
+      requestModel:
+        name: PersistMessageRequest
+        json:
+          messageId: "msg_123"
+          channelId: c3
+          message: Hi all
+          userId: "user_a"
+          timestamp: "2024-03-20T10:00:00Z"
+      responseModel:
+        name: PersistMessageResponse
+        json:
+          status: "success"
+          persistedAt: "2024-03-20T10:00:00Z"
+    - type: add_edge
+      source: API Server
+      target: Redis Pub/Sub
+      label: Publish message (c3)
+      sequenceNo: 3
+      requestModel:
+        name: ChannelMessage
+        json:
+          messageId: "msg_123"
+          channelId: c3
+          message: Hi all
+          userId: "user_a"
+          timestamp: "2024-03-20T10:00:00Z"
+    - type: add_edge
+      source: WebSocket Server 1
+      target: Membership Service
+      label: Membership check (local)
+      sequenceNo: 4
+      requestModel:
+        name: GetChannelMembersRequest
+        json:
+          channelId: c3
+      responseModel:
+        name: GetChannelMembersResponse
+        json:
+          members: [A, C]
+    - type: add_edge
+      source: WebSocket Server 1
+      target: Client C
+      label: Deliver message (local)
+      sequenceNo: 5
+      requestModel:
+        name: ChannelMessage
+        json:
+          messageId: "msg_123"
+          channelId: c3
+          message: Hi all
+          userId: "user_a"
+          timestamp: "2024-03-20T10:00:00Z"
+    - type: add_edge
+      source: Redis Pub/Sub
+      target: WebSocket Server 2
+      label: Deliver message to WS2
+      sequenceNo: 6
+      requestModel:
+        name: ChannelMessage
+        json:
+          messageId: "msg_123"
+          channelId: c3
+          message: Hi all
+          userId: "user_a"
+          timestamp: "2024-03-20T10:00:00Z"
+    - type: add_edge
+      source: WebSocket Server 2
+      target: Membership Service
+      label: Membership check (remote)
+      sequenceNo: 7
+      requestModel:
+        name: GetChannelMembersRequest
+        json:
+          channelId: c3
+      responseModel:
+        name: GetChannelMembersResponse
+        json:
+          members: [E]
+    - type: add_edge
+      source: WebSocket Server 2
+      target: Client E
+      label: Deliver message (remote)
+      sequenceNo: 8
+      requestModel:
+        name: ChannelMessage
+        json:
+          messageId: "msg_123"
+          channelId: c3
+          message: Hi all
+          userId: "user_a"
+          timestamp: "2024-03-20T10:00:00Z"
+
+    # Channel Creation Flow
+    - type: add_edge
+      source: Client A
+      target: API Server
+      label: Create channel
+      sequenceNo: 1
+      requestModel:
+        name: CreateChannelRequest
+        json:
+          name: "general"
+          description: "General discussion"
+          isPrivate: false
+      responseModel:
+        name: CreateChannelResponse
+        json:
+          channelId: "c4"
+          name: "general"
+          createdAt: "2024-03-20T10:00:00Z"
+    - type: add_edge
+      source: API Server
+      target: Database
+      label: Persist channel
+      sequenceNo: 2
+      requestModel:
+        name: PersistChannelRequest
+        json:
+          channelId: "c4"
+          name: "general"
+          description: "General discussion"
+          isPrivate: false
+      responseModel:
+        name: PersistChannelResponse
+        json:
+          status: "success"
+          persistedAt: "2024-03-20T10:00:00Z"
+    - type: add_edge
+      source: API Server
+      target: Membership Service
+      label: Add creator as admin
+      sequenceNo: 3
+      requestModel:
+        name: AddChannelMemberRequest
+        json:
+          channelId: "c4"
+          userId: "user_a"
+          role: "admin"
+      responseModel:
+        name: AddChannelMemberResponse
+        json:
+          status: "success"
+          addedAt: "2024-03-20T10:00:00Z"
+
+    # User Connection Flow
+    - type: add_edge
+      source: Client A
+      target: Connection Balancer
+      label: Connect
+      sequenceNo: 1
+      requestModel:
+        name: ConnectRequest
+        json:
+          userId: "user_a"
+          token: "jwt_token"
+      responseModel:
+        name: ConnectResponse
+        json:
+          status: "success"
+          serverId: "ws1"
+    - type: add_edge
+      source: Connection Balancer
+      target: WebSocket Server 1
+      label: Route connection
+      sequenceNo: 2
+      requestModel:
+        name: RouteConnectionRequest
+        json:
+          userId: "user_a"
+          token: "jwt_token"
+      responseModel:
+        name: RouteConnectionResponse
+        json:
+          status: "success"
+          connectionId: "conn_123"
+    - type: add_edge
+      source: WebSocket Server 1
+      target: Membership Service
+      label: Update presence
+      sequenceNo: 3
+      requestModel:
+        name: UpdatePresenceRequest
+        json:
+          userId: "user_a"
+          status: "online"
+          serverId: "ws1"
+      responseModel:
+        name: UpdatePresenceResponse
+        json:
+          status: "success"
+          updatedAt: "2024-03-20T10:00:00Z"
+
+documentation:
+  prd: |
+    # Slack Real-Time Messaging System - Product Requirements Document
+
+    ## 1. Introduction
+    This document outlines the requirements for a real-time messaging system similar to Slack, focusing on instant message delivery, channel-based communication, and system reliability.
+
+    ## 2. Project Overview
+    The system enables real-time text communication between users in channels, with features for message persistence, cross-server delivery, and membership management.
+
+    ## 3. Business Objectives
+    - Provide reliable real-time messaging
+    - Support large-scale user base
+    - Ensure message persistence
+    - Enable cross-server communication
+    - Maintain system scalability
+
+    ## 4. User Stories
+    - As a user, I want to send messages to a channel
+    - As a user, I want to receive messages in real-time
+    - As a user, I want my messages to be persisted
+    - As a user, I want to be part of multiple channels
+
+    ## 5. Success Metrics
+    - Message delivery latency < 100ms
+    - System uptime > 99.9%
+    - Support for 100,000+ concurrent users
+    - Message persistence reliability > 99.99%
+
+  trd: |
+    # Slack Real-Time Messaging System - Technical Requirements Document
+
+    ## 1. System Architecture Overview
+    The system implements a distributed architecture for real-time messaging with the following key characteristics:
+    - Decoupled persistence and real-time delivery
+    - Cross-server message delivery
+    - Channel-based message routing
+    - Membership-based message distribution
+    - Load-balanced WebSocket connections
+
+    ## 2. Tech Stack
+
+    ### 2.1 Frontend
+    - **Framework**: React with TypeScript
+    - **State Management**: Redux Toolkit
+    - **WebSocket Client**: Socket.IO-client
+    - **UI Components**: Material-UI
+    - **Build Tool**: Vite
+    - **Testing**: Jest, React Testing Library
+
+    ### 2.2 Backend
+    - **Runtime**: Node.js
+    - **Framework**: Express.js with TypeScript
+    - **WebSocket Server**: Socket.IO
+    - **Database**: PostgreSQL
+    - **Cache/PubSub**: Redis
+    - **API Documentation**: Swagger/OpenAPI
+    - **Testing**: Jest, Supertest
+
+    ### 2.3 Infrastructure
+    - **Containerization**: Docker
+    - **Orchestration**: Kubernetes
+    - **CI/CD**: GitHub Actions
+    - **Monitoring**: Prometheus, Grafana
+    - **Logging**: ELK Stack
+    - **Load Balancer**: Nginx
+
+    ## 3. Component Specifications
+
+    ### 3.1 Clients
+    - WebSocket-based clients
+    - Support for multiple channels
+    - Automatic reconnection
+    - Message queuing during disconnection
+    - Channel membership management
+    - Real-time message display
+    - Offline message handling
+
+    ### 3.2 Connection Balancer
+    - Load balancing across WebSocket servers
+    - Health checking
+    - Session persistence
+    - SSL termination
+    - Connection routing
+    - Failover handling
+    - Load distribution algorithms
+
+    ### 3.3 WebSocket Servers
+    - Handle real-time connections
+    - Message routing
+    - Channel membership management
+    - Connection state management
+    - Message validation
+    - Rate limiting
+    - Connection pooling
+    - Error handling
+
+    ### 3.4 Redis Pub/Sub
+    - Cross-server message delivery
+    - Channel-based message routing
+    - Message persistence (optional)
+    - Pub/Sub pattern implementation
+    - Message filtering
+    - Channel management
+    - Message queuing
+    - Error handling
+
+    ### 3.5 Database
+    - Message persistence
+    - Channel information
+    - User data
+    - Membership records
+    - Message history
+    - User preferences
+    - Channel settings
+    - Audit logs
+
+    ### 3.6 API Server
+    - REST API endpoints
+    - Message persistence
+    - Channel management
+    - User management
+    - Authentication
+    - Authorization
+    - Rate limiting
+    - Error handling
+
+    ### 3.7 Membership Service
+    - Channel membership tracking
+    - User presence management
+    - Connection state tracking
+    - Membership validation
+    - Channel access control
+    - User status updates
+    - Connection mapping
+
+    ## 4. Data Flow Patterns
+
+    ### 4.1 Message Sending Flow
+    ```mermaid
+    sequenceDiagram
+        participant Client_A
+        participant API_Server
+        participant Database
+        participant Redis_PubSub
+        participant WS_Server_1
+        participant WS_Server_2
+        participant Membership_Service
+        participant Client_C
+        participant Client_E
+
+        Client_A->>API_Server: SendMessageRequest
+        API_Server->>Database: PersistMessageRequest
+        Database-->>API_Server: PersistMessageResponse
+        API_Server->>Redis_PubSub: ChannelMessage
+        Redis_PubSub->>WS_Server_1: ChannelMessage
+        WS_Server_1->>Membership_Service: GetChannelMembersRequest
+        Membership_Service-->>WS_Server_1: GetChannelMembersResponse
+        WS_Server_1->>Client_C: ChannelMessage
+        Redis_PubSub->>WS_Server_2: ChannelMessage
+        WS_Server_2->>Membership_Service: GetChannelMembersRequest
+        Membership_Service-->>WS_Server_2: GetChannelMembersResponse
+        WS_Server_2->>Client_E: ChannelMessage
+    ```
+
+    ### 4.2 Channel Creation Flow
+    ```mermaid
+    sequenceDiagram
+        participant Client_A
+        participant API_Server
+        participant Database
+        participant Membership_Service
+
+        Client_A->>API_Server: CreateChannelRequest
+        API_Server->>Database: PersistChannelRequest
+        Database-->>API_Server: PersistChannelResponse
+        API_Server->>Membership_Service: AddChannelMemberRequest
+        Membership_Service-->>API_Server: AddChannelMemberResponse
+        API_Server-->>Client_A: CreateChannelResponse
+    ```
+
+    ### 4.3 User Connection Flow
+    ```mermaid
+    sequenceDiagram
+        participant Client_A
+        participant Connection_Balancer
+        participant WS_Server_1
+        participant Membership_Service
+
+        Client_A->>Connection_Balancer: ConnectRequest
+        Connection_Balancer->>WS_Server_1: RouteConnectionRequest
+        WS_Server_1-->>Connection_Balancer: RouteConnectionResponse
+        Connection_Balancer-->>Client_A: ConnectResponse
+        WS_Server_1->>Membership_Service: UpdatePresenceRequest
+        Membership_Service-->>WS_Server_1: UpdatePresenceResponse
+    ```
+
+    ## 5. API Specifications
+
+    ### 5.1 REST APIs
+    - POST /api/messages
+    - GET /api/channels
+    - POST /api/channels
+    - GET /api/members
+    - POST /api/members
+
+    ### 5.2 WebSocket APIs
+    - connect
+    - subscribe
+    - unsubscribe
+    - message
+    - presence
+
+    ### 5.3 Internal APIs
+    - membership check
+    - channel broadcast
+    - presence update
+    - connection management
+
+    ## 6. Technical Constraints
+
+    ### 6.1 Performance Requirements
+    - Message delivery latency < 100ms
+    - API response time < 200ms
+    - Database query time < 50ms
+    - WebSocket connection time < 1s
+
+    ### 6.2 Scalability Requirements
+    - Support 100,000+ concurrent users
+    - Handle 1000+ messages per second
+    - Scale horizontally with WebSocket servers
+    - Maintain performance under load
+
+    ### 6.3 Security Requirements
+    - TLS for all connections
+    - JWT for authentication
+    - Rate limiting
+    - Input validation
+    - Access control
+    - Audit logging
+
+    ### 6.4 Reliability Requirements
+    - 99.9% uptime
+    - Message persistence > 99.99%
+    - Automatic failover
+    - Data redundancy
+    - Error recovery
+
+  task_list: |
+    # Implementation Task List
+
+    ## 1. Infrastructure Setup
+    - [ ] Set up development environment
+      - [ ] Install Node.js, npm, and required tools
+      - [ ] Set up TypeScript configuration
+      - [ ] Configure ESLint and Prettier
+      - [ ] Set up Git repository
+    - [ ] Configure CI/CD pipeline
+      - [ ] Set up GitHub Actions workflows
+      - [ ] Configure build and test pipelines
+      - [ ] Set up deployment pipelines
+    - [ ] Set up monitoring and logging
+      - [ ] Configure Prometheus metrics
+      - [ ] Set up Grafana dashboards
+      - [ ] Configure ELK stack
+    - [ ] Configure load balancers
+      - [ ] Set up Nginx configuration
+      - [ ] Configure SSL certificates
+      - [ ] Set up health checks
+    - [ ] Set up Redis cluster
+      - [ ] Configure Redis nodes
+      - [ ] Set up Redis Sentinel
+      - [ ] Configure Redis persistence
+    - [ ] Configure database cluster
+      - [ ] Set up PostgreSQL master-slave
+      - [ ] Configure connection pooling
+      - [ ] Set up database backups
+
+    ## 2. Backend Services
+    - [ ] Implement WebSocket server
+      - [ ] Set up Socket.IO server
+      - [ ] Implement connection handling
+      - [ ] Implement message routing
+      - [ ] Implement channel management
+      - [ ] Add rate limiting
+      - [ ] Implement error handling
+    - [ ] Implement API server
+      - [ ] Set up Express.js with TypeScript
+      - [ ] Implement REST endpoints
+      - [ ] Add authentication middleware
+      - [ ] Implement message persistence
+      - [ ] Add input validation
+      - [ ] Implement error handling
+    - [ ] Implement Membership service
+      - [ ] Set up service structure
+      - [ ] Implement channel membership
+      - [ ] Add user presence tracking
+      - [ ] Implement connection mapping
+      - [ ] Add access control
+    - [ ] Implement Redis Pub/Sub integration
+      - [ ] Set up Redis client
+      - [ ] Implement message publishing
+      - [ ] Add message subscription
+      - [ ] Implement channel management
+      - [ ] Add error handling
+    - [ ] Implement Database layer
+      - [ ] Set up database models
+      - [ ] Implement message storage
+      - [ ] Add user data management
+      - [ ] Implement channel data
+      - [ ] Add data validation
+
+    ## 3. Frontend Development
+    - [ ] Set up React project
+      - [ ] Initialize Vite project
+      - [ ] Configure TypeScript
+      - [ ] Set up Material-UI
+      - [ ] Configure Redux Toolkit
+    - [ ] Implement WebSocket client
+      - [ ] Set up Socket.IO client
+      - [ ] Implement connection management
+      - [ ] Add message handling
+      - [ ] Implement channel UI
+      - [ ] Add error handling
+    - [ ] Implement user interface
+      - [ ] Create channel list component
+      - [ ] Implement message display
+      - [ ] Add user presence indicators
+      - [ ] Create message composer
+      - [ ] Add real-time updates
+    - [ ] Add authentication
+      - [ ] Implement login/signup
+      - [ ] Add JWT handling
+      - [ ] Implement protected routes
+    - [ ] Implement error handling
+      - [ ] Add error boundaries
+      - [ ] Implement retry logic
+      - [ ] Add error notifications
+
+    ## 4. Testing
+    - [ ] Unit tests
+      - [ ] Backend service tests
+      - [ ] Frontend component tests
+      - [ ] Utility function tests
+    - [ ] Integration tests
+      - [ ] API endpoint tests
+      - [ ] WebSocket tests
+      - [ ] Database integration tests
+    - [ ] Load tests
+      - [ ] Message throughput tests
+      - [ ] Connection handling tests
+      - [ ] Database performance tests
+    - [ ] End-to-end tests
+      - [ ] User flow tests
+      - [ ] Real-time message tests
+      - [ ] Channel management tests
+
+    ## 5. Deployment
+    - [ ] Containerization
+      - [ ] Create Docker images
+      - [ ] Set up Docker Compose
+      - [ ] Configure container networking
+    - [ ] Kubernetes configuration
+      - [ ] Create deployment manifests
+      - [ ] Set up service definitions
+      - [ ] Configure ingress rules
+    - [ ] Monitoring setup
+      - [ ] Configure metrics collection
+      - [ ] Set up alerting
+      - [ ] Create monitoring dashboards
+    - [ ] Backup strategy
+      - [ ] Set up database backups
+      - [ ] Configure backup retention
+      - [ ] Test restore procedures
+
+    ## 6. Documentation
+    - [ ] API documentation
+      - [ ] Generate OpenAPI specs
+      - [ ] Document WebSocket APIs
+      - [ ] Add example requests/responses
+    - [ ] System architecture
+      - [ ] Create architecture diagrams
+      - [ ] Document component interactions
+      - [ ] Add deployment diagrams
+    - [ ] Deployment guide
+      - [ ] Document setup steps
+      - [ ] Add configuration guide
+      - [ ] Include troubleshooting
+    - [ ] User guide
+      - [ ] Create user documentation
+      - [ ] Add feature guides
+      - [ ] Include FAQs
+
+# End of slack.archflow 

@@ -1,0 +1,1 @@
+declare module 'mermaid/dist/mermaid.core.mjs'; 

@@ -25,6 +25,7 @@ const NavBar: React.FC = () => {
           <Button color="inherit" sx={{ fontWeight: 500, textTransform: 'none' }}>Templates</Button>
           <Button color="inherit" sx={{ fontWeight: 500, textTransform: 'none' }}>Documentation</Button>
           <Button color="inherit" sx={{ fontWeight: 500, textTransform: 'none' }}>Help</Button>
+          <Button color="inherit" sx={{ fontWeight: 500, textTransform: 'none' }} onClick={() => navigate('/diagram')}>Diagram</Button>
         </Stack>
         {/* Right: Search, New Project, Avatar */}
         <Stack direction="row" spacing={2} alignItems="center">
